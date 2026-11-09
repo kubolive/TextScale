@@ -3,6 +3,7 @@ name: Build TextScale Multi-Platform
 on:
   push:
     branches: [ main, master ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
@@ -57,6 +58,7 @@ jobs:
           copy data\text_scale.effect dist\text-scale\data\
           copy data\locale\en-US.ini dist\text-scale\data\locale\
           copy TextScale-Setup.exe dist\
+          Compress-Archive -Path dist\* -DestinationPath dist\TextScale-Windows-x64.zip
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
@@ -129,3 +131,27 @@ jobs:
         with:
           name: TextScale-Linux-x64
           path: build/text-scale.so
+
+  # ==========================================
+  # 4. AUTOMATED GITHUB RELEASE (TAG PUSH)
+  # ==========================================
+  publish-release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            TextScale-Windows-x64/TextScale-Setup.exe
+            TextScale-Windows-x64/TextScale-Windows-x64.zip
+            TextScale-macOS-Universal/*
+            TextScale-Linux-x64/*

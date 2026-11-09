@@ -29,10 +29,10 @@ jobs:
         with:
           arch: x64
 
-      - name: Download OBS Studio 31.0 SDK
+      - name: Download OBS Studio 31.1.2 SDK
         shell: pwsh
         run: |
-          curl.exe -sL https://github.com/obsproject/obs-studio/releases/download/31.0.0/OBS-Studio-31.0.0-Windows-x64.zip -o obs-studio.zip
+          curl.exe -sL https://github.com/obsproject/obs-studio/releases/download/31.1.2/OBS-Studio-31.1.2-Windows-x64.zip -o obs-studio.zip
           7z x obs-studio.zip -o"obs-sdk"
 
       - name: Configure CMake

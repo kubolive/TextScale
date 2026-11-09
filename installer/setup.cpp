@@ -77,7 +77,9 @@ static bool InstallToDirectory(const std::wstring &base_dir)
 
 	bool ok = true;
 	ok &= WriteEmbeddedFile(bin_dir + L"\\text-scale.dll", PAYLOAD_DLL_data, PAYLOAD_DLL_len);
-	ok &= WriteEmbeddedFile(bin_dir + L"\\libwinpthread-1.dll", PAYLOAD_PTHREAD_data, PAYLOAD_PTHREAD_len);
+	if (PAYLOAD_PTHREAD_len > 0) {
+		ok &= WriteEmbeddedFile(bin_dir + L"\\libwinpthread-1.dll", PAYLOAD_PTHREAD_data, PAYLOAD_PTHREAD_len);
+	}
 	ok &= WriteEmbeddedFile(data_dir + L"\\text_scale.effect", PAYLOAD_EFFECT_data, PAYLOAD_EFFECT_len);
 	ok &= WriteEmbeddedFile(locale_dir + L"\\en-US.ini", PAYLOAD_LOCALE_data, PAYLOAD_LOCALE_len);
 

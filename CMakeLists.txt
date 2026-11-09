@@ -10,14 +10,16 @@ if(NOT DEFINED OBS_INCLUDE_DIR)
     set(OBS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/obs-src/libobs")
 endif()
 
+if(NOT DEFINED OBS_LIB_DIR)
+    set(OBS_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/obs-src/libobs")
+endif()
+
 include_directories(
     src
     ${OBS_INCLUDE_DIR}
 )
 
-if(DEFINED OBS_LIB_DIR)
-    link_directories(${OBS_LIB_DIR})
-endif()
+link_directories(${OBS_LIB_DIR})
 
 # Plugin Module
 add_library(text-scale MODULE

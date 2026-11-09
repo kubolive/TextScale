@@ -24,25 +24,17 @@ jobs:
         with:
           version: 1.11.1
 
-      - name: Setup MinGW Toolchain
-        uses: egor-tensin/setup-mingw@v2
+      - name: Setup MSVC Environment
+        uses: ilammy/msvc-dev-cmd@v1
         with:
-          platform: x64
-
-      - name: Download OBS Studio 31.1.2 SDK
-        shell: pwsh
-        run: |
-          curl.exe -sL https://github.com/obsproject/obs-studio/releases/download/31.1.2/OBS-Studio-31.1.2-Windows-x64.zip -o obs-studio.zip
-          7z x obs-studio.zip -o"obs-sdk"
+          arch: x64
 
       - name: Configure CMake
         run: |
           cmake -B build -G "Ninja" `
             -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_C_COMPILER="gcc" `
-            -DCMAKE_CXX_COMPILER="g++" `
             -DOBS_INCLUDE_DIR="${{ github.workspace }}/obs-src/libobs" `
-            -DOBS_LIB_DIR="${{ github.workspace }}/obs-sdk/bin/64bit"
+            -DOBS_LIB_DIR="${{ github.workspace }}/obs-src/libobs"
 
       - name: Compile TextScale Plugin
         run: |
@@ -55,7 +47,7 @@ jobs:
       - name: Generate Installer Setup EXE
         run: |
           python installer/build_installer.py
-          g++ -O2 -mwindows -static -static-libgcc -static-libstdc++ installer/setup.cpp -o TextScale-Setup.exe
+          cl.exe /O2 /EHsc /std:c++17 /Fe:TextScale-Setup.exe installer/setup.cpp user32.lib shell32.lib advapi32.lib
 
       - name: Package Windows Artifacts
         shell: pwsh

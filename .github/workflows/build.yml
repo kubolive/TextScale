@@ -25,9 +25,9 @@ jobs:
           version: 1.11.1
 
       - name: Setup MinGW Toolchain
-        shell: pwsh
-        run: |
-          "C:\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: x64
 
       - name: Download OBS Studio 31.1.2 SDK
         shell: pwsh
@@ -39,8 +39,8 @@ jobs:
         run: |
           cmake -B build -G "Ninja" `
             -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_C_COMPILER="C:/msys64/mingw64/bin/gcc.exe" `
-            -DCMAKE_CXX_COMPILER="C:/msys64/mingw64/bin/g++.exe" `
+            -DCMAKE_C_COMPILER="gcc" `
+            -DCMAKE_CXX_COMPILER="g++" `
             -DOBS_INCLUDE_DIR="${{ github.workspace }}/obs-src/libobs" `
             -DOBS_LIB_DIR="${{ github.workspace }}/obs-sdk/bin/64bit"
 
@@ -122,15 +122,13 @@ jobs:
 
       - name: Setup macOS Dependencies
         run: |
-          brew install cmake ninja pkg-config
-          brew install --cask obs
+          brew install cmake ninja
 
       - name: Configure CMake
         run: |
           cmake -B build -G "Ninja" \
             -DCMAKE_BUILD_TYPE=Release \
-            -DOBS_INCLUDE_DIR="${{ github.workspace }}/obs-src/libobs" \
-            -DOBS_LIB_DIR="/Applications/OBS.app/Contents/Frameworks"
+            -DOBS_INCLUDE_DIR="${{ github.workspace }}/obs-src/libobs"
 
       - name: Compile macOS Plugin
         run: |
@@ -148,7 +146,7 @@ jobs:
   publish-release:
     name: Publish GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [build-windows]
+    needs: [build-windows, build-linux, build-macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -163,3 +161,5 @@ jobs:
           files: |
             TextScale-Windows-x64/TextScale-Setup.exe
             TextScale-Windows-x64/TextScale-Windows-x64.zip
+            TextScale-macOS-Universal/*
+            TextScale-Linux-x64/*

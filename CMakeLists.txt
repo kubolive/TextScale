@@ -43,22 +43,9 @@ if(WIN32)
         )
     endif()
 elseif(APPLE)
-    find_library(LIBOBS_FRAMEWORK obs PATHS
-        "/Applications/OBS.app/Contents/Frameworks"
-        "${OBS_LIB_DIR}"
+    target_link_options(text-scale PRIVATE
+        -Wl,-undefined,dynamic_lookup
     )
-    if(LIBOBS_FRAMEWORK)
-        target_link_libraries(text-scale PRIVATE ${LIBOBS_FRAMEWORK})
-    else()
-        find_package(PkgConfig QUIET)
-        if(PKG_CONFIG_FOUND)
-            pkg_check_modules(LIBOBS libobs)
-            if(LIBOBS_FOUND)
-                target_link_libraries(text-scale PRIVATE ${LIBOBS_LIBRARIES})
-                target_include_directories(text-scale PRIVATE ${LIBOBS_INCLUDE_DIRS})
-            endif()
-        endif()
-    endif()
     set_target_properties(text-scale PROPERTIES
         BUNDLE TRUE
         BUNDLE_EXTENSION "plugin"

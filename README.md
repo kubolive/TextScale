@@ -13,7 +13,7 @@ Designed specifically for broadcast graphics operators, live newsrooms, and espo
 - **Auto Condense (Horizontal-Only)**:
   - Text fitting within the target container remains at 100% original width.
   - Text exceeding the target width is automatically condensed horizontally:  
-    $$\text{scale}_x = \min\left(1.0, \frac{\text{target\_width}}{\text{measured\_width}}\right)$$
+    `scale_x = min(1.0, target_width / measured_width)`
   - Never enlarges text automatically.
   - Strictly preserves original text height and font size.
   - Clamps to a user-defined minimum scale (e.g. 65%) with controlled overflow beyond the threshold.

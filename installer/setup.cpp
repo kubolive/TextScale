@@ -86,17 +86,17 @@ static bool InstallToDirectory(const std::wstring &base_dir)
 	// Write uninstaller batch script
 	std::string uninstaller_script = 
 		"@echo off\r\n"
-		"title Go cai dat TextScale Plugin cho OBS Studio\r\n"
-		"echo Dang go cai dat TextScale Plugin...\r\n"
+		"title Uninstall TextScale Plugin for OBS Studio\r\n"
+		"echo Uninstalling TextScale Plugin...\r\n"
 		"taskkill /F /IM obs64.exe >nul 2>&1\r\n"
 		"taskkill /F /IM obs32.exe >nul 2>&1\r\n"
 		"timeout /t 1 >nul\r\n"
 		"rmdir /s /q \"%~dp0\\bin\" 2>nul\r\n"
 		"rmdir /s /q \"%~dp0\\data\" 2>nul\r\n"
-		"echo Da go cai dat thanh cong TextScale Plugin!\r\n"
+		"echo TextScale Plugin has been successfully uninstalled!\r\n"
 		"pause\r\n";
 	
-	std::wstring uninstaller_path = base_dir + L"\\Go_Cai_Dat_TextScale.bat";
+	std::wstring uninstaller_path = base_dir + L"\\Uninstall_TextScale.bat";
 	HANDLE hUninst = CreateFileW(uninstaller_path.c_str(), GENERIC_WRITE, 0, NULL,
 				     CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hUninst != INVALID_HANDLE_VALUE) {
@@ -124,10 +124,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		if (!silent) {
 			int choice = MessageBoxW(
 				NULL,
-				L"OBS Studio hiện đang chạy!\n\n"
-				L"Để tránh xung đột file ghi đè, bạn nên đóng OBS Studio trước khi cài đặt.\n\n"
-				L"Bạn có muốn tiếp tục cài đặt không?",
-				L"Cài đặt TextScale - Cảnh báo",
+				L"OBS Studio is currently running!\n\n"
+				L"To avoid file write conflicts, please close OBS Studio before proceeding.\n\n"
+				L"Do you still want to continue the installation?",
+				L"TextScale Setup - Warning",
 				MB_YESNO | MB_ICONWARNING
 			);
 			if (choice != IDYES) {
@@ -140,8 +140,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	wchar_t appdata[MAX_PATH];
 	if (FAILED(SHGetFolderPathW(NULL, CSIDL_APPDATA, NULL, 0, appdata))) {
 		if (!silent) {
-			MessageBoxW(NULL, L"Không thể xác định thư mục %APPDATA% của hệ thống!",
-				    L"Lỗi cài đặt", MB_OK | MB_ICONERROR);
+			MessageBoxW(NULL, L"Unable to locate system %APPDATA% directory!",
+				    L"TextScale Setup - Error", MB_OK | MB_ICONERROR);
 		}
 		return 2;
 	}
@@ -157,9 +157,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		if (!silent) {
 			MessageBoxW(
 				NULL,
-				L"Không thể ghi file vào thư mục OBS Plugins.\n"
-				L"Vui lòng thử chạy file cài đặt với quyền 'Run as administrator'!",
-				L"Lỗi cài đặt",
+				L"Failed to write plugin files to the OBS plugins directory.\n"
+				L"Please try running the installer as Administrator!",
+				L"TextScale Setup - Error",
 				MB_OK | MB_ICONERROR
 			);
 		}
@@ -169,18 +169,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// 4. Success message
 	if (!silent) {
 		std::wstring msg =
-			L"🎉 Cài đặt TextScale Plugin cho OBS Studio thành công!\n\n"
-			L"📁 Thư mục cài đặt:\n" + user_plugin_dir + L"\n\n"
-			L"📌 HƯỚNG DẪN SỬ DỤNG NHANH:\n"
-			L"1. Mở phần mềm OBS Studio.\n"
-			L"2. Chọn nguồn chữ 'Text (GDI+)' cần co giãn.\n"
-			L"3. Chuột phải vào nguồn chữ -> chọn Filters (Bộ lọc).\n"
-			L"4. Ở mục Effect Filters, bấm '+' -> chọn 'TextScale'.\n"
-			L"5. Bật 'Enable Auto Condense', nhập chiều rộng khung (Target Width)\n"
-			L"   để chữ tự động co giãn vừa khung mà không đổi cỡ chữ!\n\n"
-			L"Chúc bạn phát sóng và livestream thành công!";
+			L"TextScale Plugin for OBS Studio installed successfully!\n\n"
+			L"Installation Directory:\n" + user_plugin_dir + L"\n\n"
+			L"QUICK START GUIDE:\n"
+			L"1. Launch OBS Studio.\n"
+			L"2. Select any 'Text (GDI+)' source.\n"
+			L"3. Right-click the source -> select Filters.\n"
+			L"4. Under Effect Filters, click '+' -> choose 'TextScale'.\n"
+			L"5. Enable 'Auto Condense' and set your Target Width to automatically\n"
+			L"   condense headlines without reducing font size!\n\n"
+			L"Happy streaming!";
 
-		MessageBoxW(NULL, msg.c_str(), L"Cài đặt hoàn tất - TextScale Plugin", MB_OK | MB_ICONINFORMATION);
+		MessageBoxW(NULL, msg.c_str(), L"TextScale Setup - Completed", MB_OK | MB_ICONINFORMATION);
 	}
 
 	return 0;

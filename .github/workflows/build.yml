@@ -67,7 +67,7 @@ jobs:
           path: dist/
 
   # ==========================================
-  # 2. UBUNTU LINUX BUILD (.SO)
+  # 2. UBUNTU LINUX BUILD (.DEB & .ZIP)
   # ==========================================
   build-linux:
     name: Ubuntu Linux x64 Build
@@ -80,7 +80,7 @@ jobs:
         run: |
           sudo add-apt-repository -y ppa:obsproject/obs-studio
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build build-essential pkg-config libobs-dev
+          sudo apt-get install -y cmake ninja-build build-essential pkg-config libobs-dev zip
 
       - name: Configure CMake
         run: |
@@ -96,14 +96,48 @@ jobs:
         run: |
           ./build/test_math
 
+      - name: Package Linux Artifacts (.deb and .zip)
+        run: |
+          # 1. Package .zip
+          mkdir -p dist/text-scale/bin/64bit
+          mkdir -p dist/text-scale/data/locale
+          cp build/text-scale.so dist/text-scale/bin/64bit/
+          cp data/text_scale.effect dist/text-scale/data/
+          cp data/locale/en-US.ini dist/text-scale/data/locale/
+          cd dist && zip -r ../text-scale-linux-x64.zip text-scale && cd ..
+
+          # 2. Package .deb installer
+          mkdir -p deb-root/DEBIAN
+          mkdir -p deb-root/usr/lib/obs-plugins
+          mkdir -p deb-root/usr/share/obs/obs-plugins/text-scale/locale
+          cp build/text-scale.so deb-root/usr/lib/obs-plugins/
+          cp data/text_scale.effect deb-root/usr/share/obs/obs-plugins/text-scale/
+          cp data/locale/en-US.ini deb-root/usr/share/obs/obs-plugins/text-scale/locale/
+
+          cat << 'EOF' > deb-root/DEBIAN/control
+Package: obs-text-scale
+Version: 1.0.0
+Section: video
+Priority: optional
+Architecture: amd64
+Maintainer: kubolive <kubolive@users.noreply.github.com>
+Description: TextScale - Native OBS Studio text condensing filter
+ An advanced horizontal text scaling and automatic condensation filter for OBS Studio.
+EOF
+
+          dpkg-deb --build deb-root text-scale-linux-x64.deb
+          mkdir -p linux-dist
+          cp text-scale-linux-x64.deb linux-dist/
+          cp text-scale-linux-x64.zip linux-dist/
+
       - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: TextScale-Linux-x64
-          path: build/text-scale.so
+          path: linux-dist/
 
   # ==========================================
-  # 3. MACOS BUILD
+  # 3. MACOS BUILD (.PKG & .ZIP)
   # ==========================================
   build-macos:
     name: macOS Universal Build
@@ -126,11 +160,26 @@ jobs:
         run: |
           cmake --build build --config Release
 
+      - name: Package macOS Artifacts (.pkg and .zip)
+        run: |
+          mkdir -p macos-dist
+          # 1. Package .zip
+          cd build && zip -r ../macos-dist/text-scale-macos-universal.zip text-scale.plugin && cd ..
+
+          # 2. Package .pkg installer
+          mkdir -p pkg-root
+          cp -R build/text-scale.plugin pkg-root/
+          pkgbuild --root pkg-root \
+                   --install-location "/Library/Application Support/obs-studio/plugins" \
+                   --identifier "com.kubolive.obs-text-scale" \
+                   --version "1.0.0" \
+                   macos-dist/text-scale-macos-universal.pkg
+
       - name: Upload macOS Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: TextScale-macOS-Universal
-          path: build/*.plugin
+          path: macos-dist/
 
   # ==========================================
   # 4. AUTOMATED GITHUB RELEASE (TAG PUSH)
@@ -153,5 +202,7 @@ jobs:
           files: |
             TextScale-Windows-x64/TextScale-Setup.exe
             TextScale-Windows-x64/TextScale-Windows-x64.zip
-            TextScale-macOS-Universal/*
-            TextScale-Linux-x64/*
+            TextScale-macOS-Universal/text-scale-macos-universal.pkg
+            TextScale-macOS-Universal/text-scale-macos-universal.zip
+            TextScale-Linux-x64/text-scale-linux-x64.deb
+            TextScale-Linux-x64/text-scale-linux-x64.zip

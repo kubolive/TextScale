@@ -24,10 +24,10 @@ jobs:
         with:
           version: 1.11.1
 
-      - name: Setup MSVC Environment
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
+      - name: Setup MinGW Toolchain
+        shell: pwsh
+        run: |
+          "C:\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Download OBS Studio 31.1.2 SDK
         shell: pwsh
@@ -39,6 +39,8 @@ jobs:
         run: |
           cmake -B build -G "Ninja" `
             -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_C_COMPILER="C:/msys64/mingw64/bin/gcc.exe" `
+            -DCMAKE_CXX_COMPILER="C:/msys64/mingw64/bin/g++.exe" `
             -DOBS_INCLUDE_DIR="${{ github.workspace }}/obs-src/libobs" `
             -DOBS_LIB_DIR="${{ github.workspace }}/obs-sdk/bin/64bit"
 
@@ -53,7 +55,7 @@ jobs:
       - name: Generate Installer Setup EXE
         run: |
           python installer/build_installer.py
-          cl.exe /O2 /EHsc /std:c++17 /Fe:TextScale-Setup.exe installer/setup.cpp user32.lib shell32.lib advapi32.lib
+          g++ -O2 -mwindows -static -static-libgcc -static-libstdc++ installer/setup.cpp -o TextScale-Setup.exe
 
       - name: Package Windows Artifacts
         shell: pwsh
@@ -78,7 +80,6 @@ jobs:
   build-linux:
     name: Ubuntu Linux x64 Build
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
@@ -115,7 +116,6 @@ jobs:
   build-macos:
     name: macOS Universal Build
     runs-on: macos-latest
-    continue-on-error: true
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4

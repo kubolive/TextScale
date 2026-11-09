@@ -163,7 +163,7 @@ bool TextMeasurement::MeasureGdiplusSource(obs_source_t *target, obs_data_t *set
 		return true;
 	}
 #else
-	obs_data_release(font_obj);
+	UNUSED_PARAMETER(settings);
 #endif
 
 	out_width = (double)base_w;

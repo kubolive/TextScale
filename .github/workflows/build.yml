@@ -114,16 +114,13 @@ jobs:
           cp data/text_scale.effect deb-root/usr/share/obs/obs-plugins/text-scale/
           cp data/locale/en-US.ini deb-root/usr/share/obs/obs-plugins/text-scale/locale/
 
-          cat << 'EOF' > deb-root/DEBIAN/control
-Package: obs-text-scale
-Version: 1.0.0
-Section: video
-Priority: optional
-Architecture: amd64
-Maintainer: kubolive <kubolive@users.noreply.github.com>
-Description: TextScale - Native OBS Studio text condensing filter
- An advanced horizontal text scaling and automatic condensation filter for OBS Studio.
-EOF
+          echo "Package: obs-text-scale" > deb-root/DEBIAN/control
+          echo "Version: 1.0.0" >> deb-root/DEBIAN/control
+          echo "Section: video" >> deb-root/DEBIAN/control
+          echo "Priority: optional" >> deb-root/DEBIAN/control
+          echo "Architecture: amd64" >> deb-root/DEBIAN/control
+          echo "Maintainer: kubolive" >> deb-root/DEBIAN/control
+          echo "Description: TextScale - Native OBS Studio text condensing filter" >> deb-root/DEBIAN/control
 
           dpkg-deb --build deb-root text-scale-linux-x64.deb
           mkdir -p linux-dist

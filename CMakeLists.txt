@@ -10,16 +10,14 @@ if(NOT DEFINED OBS_INCLUDE_DIR)
     set(OBS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/obs-src/libobs")
 endif()
 
-if(NOT DEFINED OBS_LIB_DIR)
-    set(OBS_LIB_DIR "C:/Program Files/obs-studio/bin/64bit")
-endif()
-
 include_directories(
     src
     ${OBS_INCLUDE_DIR}
 )
 
-link_directories(${OBS_LIB_DIR})
+if(DEFINED OBS_LIB_DIR)
+    link_directories(${OBS_LIB_DIR})
+endif()
 
 # Plugin Module
 add_library(text-scale MODULE
@@ -44,6 +42,32 @@ if(WIN32)
             -static-libstdc++
         )
     endif()
+elseif(APPLE)
+    find_library(LIBOBS_FRAMEWORK obs PATHS
+        "/Applications/OBS.app/Contents/Frameworks"
+        "${OBS_LIB_DIR}"
+    )
+    if(LIBOBS_FRAMEWORK)
+        target_link_libraries(text-scale PRIVATE ${LIBOBS_FRAMEWORK})
+    else()
+        find_package(PkgConfig QUIET)
+        if(PKG_CONFIG_FOUND)
+            pkg_check_modules(LIBOBS libobs)
+            if(LIBOBS_FOUND)
+                target_link_libraries(text-scale PRIVATE ${LIBOBS_LIBRARIES})
+                target_include_directories(text-scale PRIVATE ${LIBOBS_INCLUDE_DIRS})
+            endif()
+        endif()
+    endif()
+    set_target_properties(text-scale PROPERTIES
+        BUNDLE TRUE
+        BUNDLE_EXTENSION "plugin"
+    )
+else() # Linux
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(LIBOBS REQUIRED libobs)
+    target_include_directories(text-scale PRIVATE ${LIBOBS_INCLUDE_DIRS})
+    target_link_libraries(text-scale PRIVATE ${LIBOBS_LIBRARIES})
 endif()
 
 # Unit tests executable

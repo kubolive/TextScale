@@ -18,8 +18,6 @@ jobs:
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
@@ -31,11 +29,18 @@ jobs:
         with:
           arch: x64
 
+      - name: Download OBS Studio 31.0 SDK
+        shell: pwsh
+        run: |
+          curl.exe -sL https://github.com/obsproject/obs-studio/releases/download/31.0.0/OBS-Studio-31.0.0-Windows-x64.zip -o obs-studio.zip
+          7z x obs-studio.zip -o"obs-sdk"
+
       - name: Configure CMake
         run: |
           cmake -B build -G "Ninja" `
             -DCMAKE_BUILD_TYPE=Release `
-            -DOBS_INCLUDE_DIR="${{ github.workspace }}/obs-src/libobs"
+            -DOBS_INCLUDE_DIR="${{ github.workspace }}/obs-src/libobs" `
+            -DOBS_LIB_DIR="${{ github.workspace }}/obs-sdk/bin/64bit"
 
       - name: Compile TextScale Plugin
         run: |
@@ -51,14 +56,15 @@ jobs:
           cl.exe /O2 /EHsc /std:c++17 /Fe:TextScale-Setup.exe installer/setup.cpp user32.lib shell32.lib advapi32.lib
 
       - name: Package Windows Artifacts
+        shell: pwsh
         run: |
-          mkdir dist\text-scale\bin\64bit
-          mkdir dist\text-scale\data\locale
+          mkdir dist\text-scale\bin\64bit -Force
+          mkdir dist\text-scale\data\locale -Force
           copy build\text-scale.dll dist\text-scale\bin\64bit\
           copy data\text_scale.effect dist\text-scale\data\
           copy data\locale\en-US.ini dist\text-scale\data\locale\
           copy TextScale-Setup.exe dist\
-          Compress-Archive -Path dist\* -DestinationPath dist\TextScale-Windows-x64.zip
+          Compress-Archive -Path dist\* -DestinationPath dist\TextScale-Windows-x64.zip -Force
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
@@ -67,56 +73,27 @@ jobs:
           path: dist/
 
   # ==========================================
-  # 2. MACOS UNIVERSAL (ARM64 + X86_64) BUILD
-  # ==========================================
-  build-macos:
-    name: macOS Universal Build
-    runs-on: macos-latest
-    steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4
-
-      - name: Setup Dependencies
-        run: |
-          brew install cmake ninja
-
-      - name: Configure CMake (Universal arm64 + x86_64)
-        run: |
-          cmake -B build -G "Ninja" \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
-            -DOBS_INCLUDE_DIR="${{ github.workspace }}/obs-src/libobs"
-
-      - name: Compile macOS Plugin
-        run: |
-          cmake --build build --config Release
-
-      - name: Upload macOS Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: TextScale-macOS-Universal
-          path: build/*.plugin
-
-  # ==========================================
-  # 3. UBUNTU LINUX BUILD (.SO)
+  # 2. UBUNTU LINUX BUILD (.SO)
   # ==========================================
   build-linux:
     name: Ubuntu Linux x64 Build
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
       - name: Install System Dependencies
         run: |
+          sudo add-apt-repository -y ppa:obsproject/obs-studio
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build build-essential libobs-dev
+          sudo apt-get install -y cmake ninja-build build-essential pkg-config libobs-dev
 
       - name: Configure CMake
         run: |
           cmake -B build -G "Ninja" \
             -DCMAKE_BUILD_TYPE=Release \
-            -DOBS_INCLUDE_DIR="/usr/include/obs"
+            -DOBS_INCLUDE_DIR="${{ github.workspace }}/obs-src/libobs"
 
       - name: Compile Linux Plugin
         run: |
@@ -133,12 +110,45 @@ jobs:
           path: build/text-scale.so
 
   # ==========================================
+  # 3. MACOS BUILD
+  # ==========================================
+  build-macos:
+    name: macOS Universal Build
+    runs-on: macos-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup macOS Dependencies
+        run: |
+          brew install cmake ninja pkg-config
+          brew install --cask obs
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -G "Ninja" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DOBS_INCLUDE_DIR="${{ github.workspace }}/obs-src/libobs" \
+            -DOBS_LIB_DIR="/Applications/OBS.app/Contents/Frameworks"
+
+      - name: Compile macOS Plugin
+        run: |
+          cmake --build build --config Release
+
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: TextScale-macOS-Universal
+          path: build/*.plugin
+
+  # ==========================================
   # 4. AUTOMATED GITHUB RELEASE (TAG PUSH)
   # ==========================================
   publish-release:
     name: Publish GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [build-windows, build-macos, build-linux]
+    needs: [build-windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -153,5 +163,3 @@ jobs:
           files: |
             TextScale-Windows-x64/TextScale-Setup.exe
             TextScale-Windows-x64/TextScale-Windows-x64.zip
-            TextScale-macOS-Universal/*
-            TextScale-Linux-x64/*

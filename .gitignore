@@ -1,0 +1,21 @@
+# Build outputs
+build/
+bin/
+obj/
+output/
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+*.plugin
+
+# Temporary & cache files
+*.o
+*.obj
+*.log
+*.tmp
+.cache/
+.vscode/
+.idea/
+*.user

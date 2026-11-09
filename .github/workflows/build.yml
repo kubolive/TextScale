@@ -1,0 +1,131 @@
+name: Build TextScale Multi-Platform
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  # ==========================================
+  # 1. WINDOWS 64-BIT BUILD & INSTALLER EXE
+  # ==========================================
+  build-windows:
+    name: Windows x64 Build
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
+        with:
+          version: 1.11.1
+
+      - name: Setup MSVC Environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -G "Ninja" `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DOBS_INCLUDE_DIR="${{ github.workspace }}/obs-src/libobs"
+
+      - name: Compile TextScale Plugin
+        run: |
+          cmake --build build --config Release
+
+      - name: Run Unit Tests
+        run: |
+          .\build\test_math.exe
+
+      - name: Generate Installer Setup EXE
+        run: |
+          python installer/build_installer.py
+          cl.exe /O2 /EHsc /std:c++17 /Fe:TextScale-Setup.exe installer/setup.cpp user32.lib shell32.lib advapi32.lib
+
+      - name: Package Windows Artifacts
+        run: |
+          mkdir dist\text-scale\bin\64bit
+          mkdir dist\text-scale\data\locale
+          copy build\text-scale.dll dist\text-scale\bin\64bit\
+          copy data\text_scale.effect dist\text-scale\data\
+          copy data\locale\en-US.ini dist\text-scale\data\locale\
+          copy TextScale-Setup.exe dist\
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: TextScale-Windows-x64
+          path: dist/
+
+  # ==========================================
+  # 2. MACOS UNIVERSAL (ARM64 + X86_64) BUILD
+  # ==========================================
+  build-macos:
+    name: macOS Universal Build
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Dependencies
+        run: |
+          brew install cmake ninja
+
+      - name: Configure CMake (Universal arm64 + x86_64)
+        run: |
+          cmake -B build -G "Ninja" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+            -DOBS_INCLUDE_DIR="${{ github.workspace }}/obs-src/libobs"
+
+      - name: Compile macOS Plugin
+        run: |
+          cmake --build build --config Release
+
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: TextScale-macOS-Universal
+          path: build/*.plugin
+
+  # ==========================================
+  # 3. UBUNTU LINUX BUILD (.SO)
+  # ==========================================
+  build-linux:
+    name: Ubuntu Linux x64 Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build build-essential libobs-dev
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -G "Ninja" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DOBS_INCLUDE_DIR="/usr/include/obs"
+
+      - name: Compile Linux Plugin
+        run: |
+          cmake --build build --config Release
+
+      - name: Run Unit Tests
+        run: |
+          ./build/test_math
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: TextScale-Linux-x64
+          path: build/text-scale.so

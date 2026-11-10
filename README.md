@@ -118,6 +118,16 @@ text_scale_obs/
 
 ---
 
+## Development Transparency & AI Disclosure
+
+In full compliance with the [OBS Project Resource Guidelines](https://obsproject.com/forum/resources/) and the [OBS AI/Machine Learning Policy](https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.md#aimachine-learning-policy):
+
+- **Core Implementation:** The native C++ filter lifecycle (`OBS_SOURCE_TYPE_FILTER`), GDI+ typographic text measurement, GPU HLSL effect shader (`text_scale.effect`), and pure mathematical scaling/alignment algorithms were engineered for high-performance broadcast graphics workflows.
+- **AI Tool Assistance:** An AI coding assistant was utilized during development to assist with cross-platform CMake build configuration, multi-platform GitHub Actions CI workflows (Linux `.deb`, macOS `.pkg`, Windows `.exe`), and documentation formatting.
+- **Verification & Testing:** The plugin is **not** unverified code. It includes 34/34 passing standalone unit tests (`tests/test_math.cpp`) and was tested on Windows 10 x64 running OBS Studio 31.1.2 across single/multi-line text sources, complex diacritics, and live scene changes.
+
+---
+
 ## License
 
 Developed for native OBS Studio environments under GNU General Public License v2 (GPL-2.0) matching OBS Studio plugin standards.
